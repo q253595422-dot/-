@@ -6,6 +6,7 @@ interface LetterPanelProps {
   userProfile: UserProfile;
   letters: Letter[];
   setLetters: React.Dispatch<React.SetStateAction<Letter[]>>;
+  theme?: "dark" | "light";
 }
 
 const LETTER_TOPICS = [
@@ -20,7 +21,9 @@ export default function LetterPanel({
   userProfile,
   letters,
   setLetters,
+  theme = "dark",
 }: LetterPanelProps) {
+  const isDark = theme === "dark";
   const [selectedLetter, setSelectedLetter] = useState<Letter | null>(null);
   const [activeTopic, setActiveTopic] = useState("深夜心语");
   const [isWriting, setIsWriting] = useState(false);
@@ -101,9 +104,11 @@ export default function LetterPanel({
       {/* Left Column: Letter Box Collection List */}
       <div className="md:col-span-3 flex flex-col gap-4 overflow-y-auto" id="letter_box_list_col">
         <div className="flex items-center gap-2 mb-1">
-          <Mail className="w-4 h-4 text-pink-400" />
-          <h2 className="text-white font-semibold text-xs tracking-wider uppercase">我的收藏信纸箱</h2>
-          <span className="text-[10px] bg-pink-500/10 text-pink-300 font-mono px-2 py-0.5 rounded-full border border-pink-500/25">
+          <Mail className="w-4 h-4 text-pink-500 font-bold" />
+          <h2 className={`font-semibold text-xs tracking-wider uppercase ${isDark ? "text-white" : "text-slate-805"}`}>我的收藏信纸箱</h2>
+          <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
+            isDark ? "bg-pink-500/10 text-pink-300 border-pink-500/25" : "bg-pink-100 text-pink-700 border-pink-200"
+          }`}>
             {letters.length} 封
           </span>
         </div>
@@ -117,16 +122,26 @@ export default function LetterPanel({
                   setSelectedLetter(letter);
                   setIsReadModalOpen(true);
                 }}
-                className="bg-gray-900/40 hover:bg-pink-500/10 border border-white/5 hover:border-pink-500/30 rounded-xl p-4 transition-all cursor-pointer shadow-lg active:scale-95 flex items-center gap-3 group relative overflow-hidden"
+                className={`border rounded-xl p-4 transition-all cursor-pointer shadow-lg active:scale-95 flex items-center gap-3 group relative overflow-hidden ${
+                  isDark 
+                    ? "bg-gray-900/40 hover:bg-pink-500/10 border-white/5 hover:border-pink-500/30" 
+                    : "bg-white hover:bg-pink-50/50 border-pink-100 hover:border-pink-305 shadow-md"
+                }`}
               >
-                <div className="bg-gray-800 p-2.5 rounded-lg border border-white/5 text-pink-400 group-hover:text-pink-300 group-hover:bg-pink-500/10 transition-all">
+                <div className={`p-2.5 rounded-lg border text-pink-500 transition-all ${
+                  isDark 
+                    ? "bg-gray-800 border-white/5 group-hover:text-pink-300 group-hover:bg-pink-500/10" 
+                    : "bg-pink-50 border-pink-100 group-hover:text-pink-600 group-hover:bg-pink-100"
+                }`}>
                   <MailOpen className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-white text-xs font-semibold group-hover:text-pink-300 transition-all truncate">
+                  <h4 className={`text-xs font-semibold transition-all truncate ${
+                    isDark ? "text-white group-hover:text-pink-300" : "text-slate-800 group-hover:text-pink-605"
+                  }`}>
                     {letter.title}
                   </h4>
-                  <span className="text-[9px] text-gray-500 font-mono mt-0.5 block">{letter.date}</span>
+                  <span className={`text-[9px] font-mono mt-0.5 block ${isDark ? "text-gray-500" : "text-slate-500"}`}>{letter.date}</span>
                 </div>
               </div>
             );
@@ -135,13 +150,17 @@ export default function LetterPanel({
       </div>
 
       {/* Right Column: Custom AI Letter Generator Room */}
-      <div className="md:col-span-2 bg-gray-900/40 backdrop-blur-md p-5 rounded-2xl border border-white/5 shadow-xl flex flex-col justify-between" id="ai_letter_writer_col">
+      <div className={`md:col-span-2 backdrop-blur-md p-5 rounded-2xl border shadow-xl flex flex-col justify-between transition-colors duration-500 ${
+        isDark 
+          ? "bg-gray-900/40 border-white/5" 
+          : "bg-white border-pink-100/60"
+      }`} id="ai_letter_writer_col">
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <Feather className="w-4 h-4 text-amber-400 animate-bounce" />
-            <h2 className="text-white font-medium text-xs tracking-wider uppercase">专属手写信件工坊</h2>
+            <Feather className="w-4 h-4 text-amber-500 animate-bounce" />
+            <h2 className={`font-semibold text-xs tracking-wider uppercase ${isDark ? "text-white" : "text-slate-800"}`}>专属手写信件工坊</h2>
           </div>
-          <p className="text-[11px] text-gray-400 leading-relaxed mb-4">
+          <p className={`text-[11px] leading-relaxed mb-4 ${isDark ? "text-gray-400" : "text-slate-500"}`}>
             觉得预设信件不够过瘾？没关系！选择你今天最渴望她回答的话题心意，邀请小团为你手写一封带有真实爱意的专属书信吧。
           </p>
 
@@ -153,8 +172,12 @@ export default function LetterPanel({
                 disabled={isWriting}
                 className={`w-full text-left p-3 rounded-xl border flex items-center justify-between text-xs transition-all pointer-events-auto cursor-pointer ${
                   activeTopic === topic.key
-                    ? "bg-gradient-to-r from-pink-500/20 to-rose-500/10 border-pink-500/40 text-pink-300 font-medium"
-                    : "bg-gray-800/20 border-white/5 text-gray-400 hover:bg-gray-800/50 hover:text-white"
+                    ? isDark
+                      ? "bg-gradient-to-r from-pink-500/20 to-rose-500/10 border-pink-500/40 text-pink-300 font-medium"
+                      : "bg-pink-105 border-pink-300/60 text-pink-700 font-semibold shadow-sm"
+                    : isDark
+                      ? "bg-gray-800/20 border-white/5 text-gray-400 hover:bg-gray-800/50 hover:text-white"
+                      : "bg-pink-50/[0.15] border-pink-100/30 text-slate-600 hover:bg-pink-50 hover:text-pink-700"
                 }`}
               >
                 <span className="flex items-center gap-2">

@@ -5,6 +5,7 @@ import { Moment } from "../types";
 interface FeedsPanelProps {
   moments: Moment[];
   setMoments: React.Dispatch<React.SetStateAction<Moment[]>>;
+  theme?: "dark" | "light";
 }
 
 const ILLUSTRATIONS = {
@@ -28,7 +29,8 @@ const RANDOM_REPLIES = [
   "好耶！那下次出门，我们要十指相扣、手牵手一起去踩晚霞哦！🤝",
 ];
 
-export default function FeedsPanel({ moments, setMoments }: FeedsPanelProps) {
+export default function FeedsPanel({ moments, setMoments, theme = "dark" }: FeedsPanelProps) {
+  const isDark = theme === "dark";
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
 
   const toggleLike = (id: string) => {
@@ -107,18 +109,20 @@ export default function FeedsPanel({ moments, setMoments }: FeedsPanelProps) {
     <div className="w-full h-full flex flex-col gap-6 overflow-y-auto p-4 lg:p-6" id="feeds_panel_timeline">
       
       {/* Top Welcome Title */}
-      <div className="flex items-center justify-between border-b border-white/5 pb-3">
+      <div className={`flex items-center justify-between border-b pb-3 transition-colors duration-500 ${
+        isDark ? "border-white/5" : "border-pink-100/30"
+      }`}>
         <div className="flex items-center gap-2">
-          <Compass className="w-5 h-5 text-pink-400" />
+          <Compass className="w-5 h-5 text-pink-500" />
           <div>
-            <h2 className="text-white font-semibold text-xs tracking-wider uppercase">小团的日常小生活</h2>
-            <p className="text-[10px] text-gray-400 mt-0.5">这里记录着除却桌面之外，她漫步世界的粉色气泡~</p>
+            <h2 className={`font-semibold text-xs tracking-wider uppercase ${isDark ? "text-white" : "text-slate-805"}`}>小团的日常小生活</h2>
+            <p className={`text-[10px] mt-0.5 ${isDark ? "text-gray-400" : "text-slate-500"}`}>这里记录着除却桌面之外，她漫步世界的粉色气泡~</p>
           </div>
         </div>
       </div>
 
       {/* Feed Stream list */}
-      <div className="space-y-6 max-w-2xl mx-auto w-full" id="feeds_articles_col">
+      <div className="space-y-6 max-w-2xl mx-auto w-full pb-8" id="feeds_articles_col">
         {moments.map((moment) => {
           const bannerClass = ILLUSTRATIONS[moment.imageType] || "from-pink-500/20 to-purple-500/20";
           const decorEmote = EMOTICONS[moment.imageType] || "🌸✨";
@@ -126,7 +130,11 @@ export default function FeedsPanel({ moments, setMoments }: FeedsPanelProps) {
           return (
             <div 
               key={moment.id}
-              className="bg-gray-900/40 backdrop-blur-md rounded-2xl border border-white/5 p-5 shadow-xl flex flex-col gap-3"
+              className={`backdrop-blur-md rounded-2xl border p-5 shadow-xl flex flex-col gap-3 transition-all duration-500 ${
+                isDark 
+                  ? "bg-gray-900/40 border-white/5" 
+                  : "bg-white border-pink-100/60 shadow-md"
+              }`}
               id={`moment_feed_${moment.id}`}
             >
               
@@ -137,11 +145,13 @@ export default function FeedsPanel({ moments, setMoments }: FeedsPanelProps) {
                     团
                   </div>
                   <div>
-                    <h4 className="text-white font-bold text-xs flex items-center gap-1">
+                    <h4 className={`font-bold text-xs flex items-center gap-1 ${isDark ? "text-white" : "text-slate-800"}`}>
                       小团子 
-                      <span className="text-[9px] bg-pink-500/20 text-pink-300 rounded font-normal px-1">博主</span>
+                      <span className={`text-[9px] rounded font-normal px-1 ${
+                        isDark ? "bg-pink-500/20 text-pink-300" : "bg-pink-100 text-pink-700 font-semibold"
+                      }`}>博主</span>
                     </h4>
-                    <span className="text-[9px] text-gray-500 font-mono">{moment.date} · {moment.time}</span>
+                    <span className={`text-[9px] font-mono ${isDark ? "text-gray-500" : "text-slate-400"}`}>{moment.date} · {moment.time}</span>
                   </div>
                 </div>
 
@@ -149,7 +159,9 @@ export default function FeedsPanel({ moments, setMoments }: FeedsPanelProps) {
               </div>
 
               {/* Feed Description Text */}
-              <p className="text-xs md:text-sm text-slate-200 leading-relaxed font-sans mt-1">
+              <p className={`text-xs md:text-sm leading-relaxed font-sans mt-1 ${
+                isDark ? "text-slate-200" : "text-slate-700"
+              }`}>
                 {moment.content}
               </p>
 
@@ -172,34 +184,40 @@ export default function FeedsPanel({ moments, setMoments }: FeedsPanelProps) {
               </div>
 
               {/* Likes and Comment metrics bar */}
-              <div className="flex gap-4 items-center text-xs mt-1 py-1.5 border-y border-white/5">
+              <div className={`flex gap-4 items-center text-xs mt-1 py-1.5 border-y ${
+                isDark ? "border-white/5" : "border-pink-100/30"
+              }`}>
                 <button
                   onClick={() => toggleLike(moment.id)}
-                  className={`flex items-center gap-1.5 font-medium transition-all active:scale-90 cursor-pointer ${
-                    moment.hasLiked ? "text-pink-400 font-bold" : "text-gray-400 hover:text-white"
+                  className={`flex items-center gap-1.5 font-semibold transition-all active:scale-95 cursor-pointer ${
+                    moment.hasLiked ? "text-pink-500 font-bold" : isDark ? "text-gray-400 hover:text-white" : "text-slate-500 hover:text-pink-600"
                   }`}
                 >
-                  <Heart className={`w-4 h-4 ${moment.hasLiked ? "fill-current" : ""}`} />
+                  <Heart className={`w-4 h-4 ${moment.hasLiked ? "fill-current text-pink-500" : ""}`} />
                   <span>{moment.likes} 人点赞</span>
                 </button>
 
-                <div className="flex items-center gap-1.5 text-gray-400">
-                  <MessageSquare className="w-4 h-4" />
-                  <span>{moment.comments.length} 条评论</span>
+                <div className={isDark ? "text-gray-450" : "text-slate-505"}>
+                  <span className="flex items-center gap-1.5">
+                    <MessageSquare className="w-4 h-4 text-pink-500" />
+                    <span>{moment.comments.length} 条评论</span>
+                  </span>
                 </div>
               </div>
 
               {/* Comments Node */}
               {moment.comments.length > 0 && (
-                <div className="space-y-2 bg-gray-800/15 p-3 rounded-xl border border-white/5 mt-1" id="comments_box">
+                <div className={`space-y-2 p-3 rounded-xl border mt-1 transition-colors duration-500 ${
+                  isDark ? "bg-gray-800/15 border-white/5" : "bg-pink-50/20 border-pink-100/40"
+                }`} id="comments_box">
                   {moment.comments.map((comm) => {
                     const isBot = comm.author.includes("小团");
                     return (
                       <div key={comm.id} className="text-xs leading-relaxed flex items-baseline gap-1.5">
-                        <span className={`font-semibold shrink-0 ${isBot ? "text-pink-400" : "text-emerald-400"}`}>
+                        <span className={`font-semibold shrink-0 ${isBot ? "text-pink-500 font-bold" : "text-emerald-500 font-bold"}`}>
                           {comm.author}:
                         </span>
-                        <span className="text-gray-300 font-sans">{comm.content}</span>
+                        <span className={`font-sans ${isDark ? "text-gray-300" : "text-slate-650"}`}>{comm.content}</span>
                       </div>
                     );
                   })}
@@ -214,13 +232,21 @@ export default function FeedsPanel({ moments, setMoments }: FeedsPanelProps) {
                   value={getInputVal(moment.id)}
                   onChange={(e) => writeInputVal(moment.id, e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleAddComment(moment.id)}
-                  className="flex-1 bg-gray-800/60 rounded-xl px-3.5 py-2 text-xs text-white placeholder-gray-500 outline-none border border-white/5 focus:border-pink-500/30 transition-all font-sans"
+                  className={`flex-1 rounded-xl px-3.5 py-2 text-xs outline-none border transition-all font-sans ${
+                    isDark
+                      ? "bg-gray-800/60 border-white/5 text-white placeholder-gray-500 focus:border-pink-500/30"
+                      : "bg-white border-pink-200 text-slate-805 placeholder-slate-400 focus:border-pink-400"
+                  }`}
                 />
                 
                 <button
                   onClick={() => handleAddComment(moment.id)}
                   disabled={!getInputVal(moment.id).trim()}
-                  className="bg-gray-800 hover:bg-pink-500/10 text-gray-400 hover:text-pink-400 px-3.5 py-2 rounded-xl transition-all font-semibold text-xs active:scale-95 disabled:opacity-50 cursor-pointer"
+                  className={`px-3.5 py-2 rounded-xl transition-all font-semibold text-xs active:scale-95 disabled:opacity-50 cursor-pointer ${
+                    isDark
+                      ? "bg-gray-800 hover:bg-pink-500/10 text-gray-450 hover:text-pink-400"
+                      : "bg-pink-50 hover:bg-pink-100 text-pink-600 hover:text-pink-700 border border-pink-100"
+                  }`}
                 >
                   <Send className="w-3.5 h-3.5" />
                 </button>

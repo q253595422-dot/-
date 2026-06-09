@@ -5,6 +5,7 @@ import { VOICE_PACKS } from "../data";
 
 interface AboutPanelProps {
   intimacy: IntimacyState;
+  theme?: "dark" | "light";
 }
 
 const BIO_STATS = [
@@ -17,12 +18,13 @@ const BIO_STATS = [
 ];
 
 const WARDROBE = [
-  { id: "o1", name: "🌸 经典小西装 JK 裙", reqLv: 1, desc: "初次相遇时，小团身上穿的日系经典水手制服。甜美清醇。" },
-  { id: "o2", name: "👓 温柔知性金丝眼镜装", reqLv: 4, desc: "当你们一起专注于学习或工作时，她戴上圆框金边装饰眼镜，十分懂行。" },
-  { id: "o3", name: "🍓 居家草莓粉睡衣", reqLv: 7, desc: "深度亲密后解禁的毛茸茸草莓居家服，适合深夜对你说悄悄话。" },
+  { id: "o1", name: "🌸 经典日常水手服 JK", reqLv: 1, desc: "初次相遇时，小团身上穿的日系经典水手制服。甜美清醇。" },
+  { id: "o2", name: "👓 知性金丝防蓝光眼镜", reqLv: 4, desc: "当你们一起专注于写代码时，她戴上圆框金饰眼镜，专心而乖巧。" },
+  { id: "o3", name: "🍓 软绵绵居家草莓睡衣", reqLv: 7, desc: "深度亲密后解禁的毛茸茸草莓睡袍，适合深夜对你说悄悄话。" },
 ];
 
-export default function AboutPanel({ intimacy }: AboutPanelProps) {
+export default function AboutPanel({ intimacy, theme = "dark" }: AboutPanelProps) {
+  const isDark = theme === "dark";
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
   const [voiceLyrics, setVoiceLyrics] = useState("");
 
@@ -31,6 +33,25 @@ export default function AboutPanel({ intimacy }: AboutPanelProps) {
 
     setPlayingVoiceId(pack.id);
     setVoiceLyrics(pack.lyrics);
+
+    // Play touch interaction chime
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioContext) {
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(440, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.04, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.25);
+      }
+    } catch {}
 
     // Simulate audio length
     setTimeout(() => {
@@ -45,34 +66,46 @@ export default function AboutPanel({ intimacy }: AboutPanelProps) {
       {/* Bio / Stats Column */}
       <div className="lg:col-span-2 flex flex-col gap-4" id="about_bio_column">
         {/* Profile Card */}
-        <div className="bg-gradient-to-br from-pink-900/30 to-gray-900 border border-white/5 shadow-2xl rounded-2xl p-5" id="companion_card">
-          <div className="flex items-center gap-3 border-b border-white/5 pb-4 mb-4">
+        <div className={`border shadow-2xl rounded-2xl p-5 transition-colors duration-500 ${
+          isDark 
+            ? "bg-gradient-to-br from-pink-900/30 to-gray-900 border-white/5" 
+            : "bg-gradient-to-b from-pink-100/50 to-white border-pink-205 shadow-md"
+        }`} id="companion_card">
+          <div className={`flex items-center gap-3 border-b pb-4 mb-4 ${isDark ? "border-white/5" : "border-pink-100/40"}`}>
             <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-pink-500 to-rose-400 font-bold text-white flex items-center justify-center text-lg shadow-lg">
               团
             </div>
             <div>
-              <h3 className="text-white text-sm font-bold flex items-center gap-1">
+              <h3 className={`text-sm font-bold flex items-center gap-1 ${isDark ? "text-white" : "text-slate-800"}`}>
                 小团er
-                <Sparkles className="w-4 h-4 text-amber-400" />
+                <Sparkles className="w-4 h-4 text-amber-500 animate-[bounce_1.5s_infinite]" />
               </h3>
-              <span className="text-[10px] text-pink-300 font-mono">虚拟桌面二次元贴心萌娘</span>
+              <span className={`text-[10px] font-mono ${isDark ? "text-pink-300" : "text-pink-600 font-semibold"}`}>虚拟桌面二次元贴心萌娘</span>
             </div>
           </div>
 
           <div className="space-y-3 text-xs" id="character_traits">
             {BIO_STATS.map((stat, idx) => (
-              <div key={idx} className="flex justify-between items-center py-1 border-b border-white/[0.02]" id={`trait_${idx}`}>
-                <span className="text-gray-400 font-medium">{stat.label}</span>
-                <span className="text-slate-200 text-right font-sans">{stat.val}</span>
+              <div key={idx} className={`flex justify-between items-center py-1 border-b ${
+                isDark ? "border-white/[0.02]" : "border-pink-100/20"
+              }`} id={`trait_${idx}`}>
+                <span className={`font-semibold ${isDark ? "text-gray-400" : "text-slate-500"}`}>{stat.label}</span>
+                <span className={`text-right font-sans ${isDark ? "text-slate-205" : "text-slate-700"}`}>{stat.val}</span>
               </div>
             ))}
           </div>
         </div>
 
         {/* Dress Up Wardrobes */}
-        <div className="bg-gray-900/40 p-5 rounded-2xl border border-white/5 shadow-xl flex-1" id="wardrobes_list">
-          <h3 className="text-white text-xs font-semibold tracking-wider uppercase mb-3 flex items-center gap-1.5">
-            <Wand2 className="w-4 h-4 text-pink-400 animate-pulse" />
+        <div className={`p-5 rounded-2xl border shadow-xl flex-1 transition-colors duration-500 ${
+          isDark 
+            ? "bg-gray-900/40 border-white/5" 
+            : "bg-white border-pink-100/60 shadow-md"
+        }`} id="wardrobes_list">
+          <h3 className={`text-xs font-semibold tracking-wider uppercase mb-3 flex items-center gap-1.5 ${
+            isDark ? "text-white" : "text-slate-800"
+          }`}>
+            <Wand2 className="w-4 h-4 text-pink-500 animate-pulse" />
             小团的秘密衣物间 (装扮解锁)
           </h3>
 
@@ -84,24 +117,30 @@ export default function AboutPanel({ intimacy }: AboutPanelProps) {
                   key={out.id}
                   className={`p-3.5 rounded-xl border flex flex-col gap-1 transition-all ${
                     isUnlocked
-                      ? "bg-slate-800/40 border-pink-500/25 group hover:border-pink-500/40"
+                      ? isDark
+                        ? "bg-slate-800/40 border-pink-500/25 hover:border-pink-500/40"
+                        : "bg-pink-50/20 border-pink-200/65 shadow-sm hover:border-pink-400"
                       : "bg-gray-800/10 border-white/5 opacity-50"
                   }`}
                   id={`outfit_node_${out.id}`}
                 >
                   <div className="flex justify-between items-center text-xs">
-                    <span className={`font-semibold ${isUnlocked ? "text-slate-200" : "text-gray-500"}`}>
+                    <span className={`font-bold ${
+                      isUnlocked 
+                        ? isDark ? "text-slate-200" : "text-slate-750" 
+                        : "text-gray-500"
+                    }`}>
                       {out.name}
                     </span>
                     <span className={`text-[9px] px-2 py-0.5 rounded font-mono ${
                       isUnlocked 
                         ? "bg-emerald-500/20 text-emerald-400" 
-                        : "bg-amber-500/15 text-amber-300"
+                        : "bg-amber-500/15 text-amber-500 font-semibold"
                     }`}>
-                      {isUnlocked ? "❤️ 已解锁装扮" : `🔒 Lv.${out.reqLv} 亲密锁`}
+                      {isUnlocked ? "❤️ 已解锁饰品" : `🔒 Lv.${out.reqLv} 亲密锁`}
                     </span>
                   </div>
-                  <p className="text-[10px] text-gray-400 font-sans leading-relaxed mt-0.5">{out.desc}</p>
+                  <p className={`text-[10px] font-sans leading-relaxed mt-0.5 ${isDark ? "text-gray-400" : "text-slate-500"}`}>{out.desc}</p>
                 </div>
               );
             })}
@@ -110,14 +149,18 @@ export default function AboutPanel({ intimacy }: AboutPanelProps) {
       </div>
 
       {/* Voice Packs Studio Column */}
-      <div className="lg:col-span-3 bg-gray-900/40 backdrop-blur-md p-5 rounded-2xl border border-white/5 shadow-xl flex flex-col justify-between" id="about_voicepacks_column">
+      <div className={`backdrop-blur-md p-5 rounded-2xl border shadow-xl flex flex-col justify-between transition-colors duration-500 ${
+        isDark 
+          ? "bg-gray-900/40 border-white/5" 
+          : "bg-white border-pink-100/60 shadow-md"
+      }`} id="about_voicepacks_column">
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <Volume2 className="w-4 h-4 text-emerald-400" />
-            <h2 className="text-white font-semibold text-xs tracking-wider uppercase">专属声卡原音播录室</h2>
+            <Volume2 className="w-4 h-4 text-emerald-500" />
+            <h2 className={`font-semibold text-xs tracking-wider uppercase ${isDark ? "text-white" : "text-slate-800"}`}>专属声卡原音播记室</h2>
           </div>
-          <p className="text-[11px] text-gray-400 leading-relaxed mb-4">
-            这里收藏着小团悄悄为你录下的所有甜美日记！点击以下声卡即可在屏幕播发她的声音字幕。
+          <p className={`text-[11px] leading-relaxed mb-4 ${isDark ? "text-gray-400" : "text-slate-500"}`}>
+            这里收纳着小团悄悄为你录下的所有甜美心情！点击以下声卡即可在屏幕播发她的语音原声字幕。
           </p>
 
           <div className="space-y-2.5" id="voicepacks_list">
@@ -128,21 +171,25 @@ export default function AboutPanel({ intimacy }: AboutPanelProps) {
                 disabled={playingVoiceId !== null}
                 className={`w-full text-left p-3.5 rounded-xl border flex items-center justify-between text-xs transition-all cursor-pointer ${
                   playingVoiceId === pack.id
-                    ? "bg-emerald-500/20 border-emerald-500/45 text-emerald-300 font-medium"
+                    ? isDark
+                      ? "bg-emerald-500/20 border-emerald-500/45 text-emerald-300 font-semibold"
+                      : "bg-emerald-50 border-emerald-200 text-emerald-800 font-bold"
                     : playingVoiceId !== null
-                    ? "bg-gray-800/10 border-white/5 text-gray-600 cursor-not-allowed opacity-30"
-                    : "bg-gray-800/30 border-white/5 text-slate-300 hover:bg-slate-800/60 hover:text-white"
+                    ? "bg-gray-800/10 border-white/5 text-gray-500 cursor-not-allowed opacity-30"
+                    : isDark
+                      ? "bg-gray-800/30 border-white/5 text-slate-300 hover:bg-slate-800/60 hover:text-white"
+                      : "bg-pink-50/50 border-pink-100 text-pink-900 hover:bg-pink-100 hover:text-pink-950"
                 }`}
               >
                 <div className="flex flex-col gap-0.5">
-                  <span className="font-semibold">{pack.title}</span>
-                  <span className="text-[9px] text-gray-500">{pack.caption}</span>
+                  <span className="font-bold">{pack.title}</span>
+                  <span className={`text-[9px] ${isDark ? "text-gray-500" : "text-slate-450 font-medium"}`}>{pack.caption}</span>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-[9px] font-mono text-gray-500">{pack.audioDuration}</span>
-                  <span className="text-xs">
-                    {playingVoiceId === pack.id ? "🔊 正在播发..." : "▶️ 播发原音"}
+                  <span className={`text-[9px] font-mono ${isDark ? "text-gray-500" : "text-slate-400"}`}>{pack.audioDuration}</span>
+                  <span className="text-[10px] font-bold">
+                    {playingVoiceId === pack.id ? "🔊 正在播出..." : "▶️ 播原声"}
                   </span>
                 </div>
               </button>
@@ -153,10 +200,16 @@ export default function AboutPanel({ intimacy }: AboutPanelProps) {
         {/* Voice Lip Sync Lyric display box */}
         <div className="mt-5" id="lyric_sync_box">
           {playingVoiceId ? (
-            <div className="bg-slate-900/80 border border-emerald-500/20 rounded-xl p-4 shadow-xl" id="voice_playing_board">
-              <div className="flex items-center justify-between text-[10px] text-emerald-400 font-semibold mb-2.5">
+            <div className={`border rounded-xl p-4 shadow-xl transition-all duration-300 ${
+              isDark 
+                ? "bg-slate-900/80 border-emerald-500/20 text-emerald-400" 
+                : "bg-emerald-50/90 border-emerald-250 text-emerald-800 shadow-md"
+            }`} id="voice_playing_board">
+              <div className={`flex items-center justify-between text-[10px] font-semibold mb-2.5 ${
+                isDark ? "text-emerald-400" : "text-emerald-700"
+              }`}>
                 <span className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-550 animate-ping" />
                   小团原音实时歌声字幕
                 </span>
                 
@@ -167,13 +220,15 @@ export default function AboutPanel({ intimacy }: AboutPanelProps) {
                   <span className="w-0.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
                 </div>
               </div>
-              <p className="text-emerald-100 font-sans italic text-xs leading-relaxed">
+              <p className={`font-sans italic text-xs leading-relaxed ${isDark ? "text-emerald-100" : "text-emerald-950 font-semibold"}`}>
                 {voiceLyrics}
               </p>
             </div>
           ) : (
-            <div className="bg-gray-800/10 border border-white/5 rounded-xl p-4 text-center text-[11px] text-gray-400 italic" id="voice_idle_prompt">
-              💡 闲暇之余，点触声卡听听小团对你的真情告白吧~
+            <div className={`rounded-xl p-4 text-center text-[11px] italic transition-colors duration-500 ${
+              isDark ? "bg-gray-800/10 border border-white/5 text-gray-500" : "bg-pink-50/20 border border-pink-100/40 text-pink-500"
+            }`} id="voice_idle_prompt">
+              💡 闲暇之余，点击声卡听听小团对你的真情表白吧~
             </div>
           )}
         </div>
