@@ -1,0 +1,6 @@
+{
+  "name": "TuanAgent",
+  "description": "一个面向中国用户的中文陪伴式桌面 Agent。提供真人感桌面、深度聊天、记忆册、甜蜜信件、日常动态、专属档案、专注时间以及详细设置等8大功能。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
