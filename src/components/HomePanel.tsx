@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Flame, Heart, Smile } from "lucide-react";
+import { Flame, Heart, Smile, Sparkles, Hand, Apple, HelpCircle } from "lucide-react";
 import { UserProfile, IntimacyState, CompanionStatus } from "../types";
 
 // Import our beautiful main image
@@ -49,14 +49,86 @@ export default function HomePanel({
   onNavigateTo,
 }: HomePanelProps) {
   const [bubbleText, setBubbleText] = useState<string>(
-    `亲爱的${userProfile.nickname || "主人"}！你终于点亮小团啦！今天过得怎么样呀？小团一直都在这里眼巴巴等你呢，快抱抱！💕`
+    `亲爱的${userProfile.nickname || "主人"}！你终于点亮小团啦！快轻轻触碰人家的脸蛋、发丝或拉拉人家的手，试试极富真实感的 3D Interactive 交互吧！💕`
   );
   const [isInteracting, setIsInteracting] = useState(false);
   const [activeHeart, setActiveHeart] = useState<{ id: number; x: number; y: number } | null>(null);
 
+  // 3D Tilt state
+  const [tiltX, setTiltX] = useState(0);
+  const [tiltY, setTiltY] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Synthesize customized magical chime audios based on touching categories
+  const playInteractionChime = (type: "pinch" | "pet" | "feed" | "hand") => {
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      if (type === "pet") {
+        // High harmonic romantic chime
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+        osc.frequency.exponentialRampToValueAtTime(1046.50, ctx.currentTime + 0.18); // C6
+      } else if (type === "pinch") {
+        // Playful squeak
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(659.25, ctx.currentTime); // E5
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime + 0.08); // D5
+      } else if (type === "feed") {
+        // Juicy bubble jump sound
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(392.00, ctx.currentTime); // G4
+        osc.frequency.exponentialRampToValueAtTime(783.99, ctx.currentTime + 0.1); // G5
+      } else {
+        // Smooth loving chime chord tone
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(440.00, ctx.currentTime); // A4
+        osc.frequency.exponentialRampToValueAtTime(659.25, ctx.currentTime + 0.22); // E5
+      }
+      
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.28);
+      
+      osc.start();
+      osc.stop(ctx.currentTime + 0.3);
+    } catch (e) {
+      console.warn("Audio Context is blocked or not sustained", e);
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = e.currentTarget;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    // Convert coordinate offset to -12deg ~ 12deg tilt angles
+    const rotateX = -((y - rect.height / 2) / (rect.height / 2)) * 12;
+    const rotateY = ((x - rect.width / 2) / (rect.width / 2)) * 12;
+    
+    setTiltX(rotateX);
+    setTiltY(rotateY);
+  };
+
+  const handleMouseLeave = () => {
+    setTiltX(0);
+    setTiltY(0);
+    setIsHovered(false);
+  };
+
   const triggerInteraction = (type: "pinch" | "pet" | "feed" | "hand") => {
     if (isInteracting) return;
     setIsInteracting(true);
+
+    // Play tactile physical feedback chime
+    playInteractionChime(type);
 
     // Get random dialogue
     const replies: string[] = INTERACTION_REPLIES[type];
@@ -135,6 +207,7 @@ export default function HomePanel({
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-between p-4 lg:p-6" id="home_panel_layout">
+      
       {/* Intimacy State Header */}
       <div className="w-full flex justify-between items-center bg-gray-900/40 backdrop-blur-md rounded-2xl p-4 border border-white/5 shadow-xl" id="home_header">
         <div className="flex items-center gap-3">
@@ -178,10 +251,13 @@ export default function HomePanel({
         </div>
       </div>
 
-      {/* Main Beautiful Interactive Avatar Screen */}
-      <div className="relative flex-1 w-full flex flex-col items-center justify-center py-6 min-h-[350px]">
+      {/* Main Beautiful Interactive Avatar Screen with 3D Depth tilt Parallax */}
+      <div 
+        className="relative flex-grow w-full flex flex-col items-center justify-center py-6 min-h-[360px]"
+        id="home_interactive_stage"
+      >
         
-        {/* Floating Bubble */}
+        {/* Floating Speech Bubble */}
         <AnimatePresence mode="wait">
           {bubbleText && (
             <motion.div
@@ -189,11 +265,11 @@ export default function HomePanel({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.8, y: -10 }}
               transition={{ type: "spring", damping: 15 }}
-              className="absolute z-10 top-2 bg-gradient-to-br from-pink-500/90 to-rose-600/90 backdrop-blur-md rounded-2xl p-4 shadow-2xl max-w-sm border border-pink-400/30 text-white text-xs leading-relaxed"
+              className="absolute z-30 top-1.5 bg-gradient-to-br from-pink-600/95 to-rose-700/95 backdrop-blur-md rounded-2xl p-4 shadow-2xl max-w-sm border border-pink-400/30 text-white text-xs leading-relaxed"
               id="speech_bubble"
             >
               {bubbleText}
-              <div className="absolute left-1/2 -bottom-2 -translate-x-1/2 w-4 h-4 rotate-45 bg-rose-600/95" />
+              <div className="absolute left-1/2 -bottom-2 -translate-x-1/2 w-4 h-4 rotate-45 bg-rose-700" />
             </motion.div>
           )}
         </AnimatePresence>
@@ -206,7 +282,7 @@ export default function HomePanel({
               initial={{ opacity: 0, y: activeHeart.y, scale: 0.5 }}
               animate={{ opacity: [1, 0.8, 0], y: activeHeart.y - 120, scale: [1, 1.4, 0.8] }}
               transition={{ duration: 1.5, ease: "easeOut" }}
-              className="absolute z-20 pointer-events-none select-none text-rose-400 drop-shadow-lg"
+              className="absolute z-40 pointer-events-none select-none text-rose-400 drop-shadow-lg"
               style={{ left: `${activeHeart.x}px` }}
             >
               <Heart className="w-9 h-9 fill-current" />
@@ -214,41 +290,123 @@ export default function HomePanel({
           )}
         </AnimatePresence>
 
-        {/* Elegant Breathing Avatar Cover */}
-        <motion.div
-          animate={{
-            y: [0, -6, 0],
-            rotate: [0, 0.5, -0.5, 0],
-          }}
-          transition={{
-            duration: 5,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-          className="relative w-64 md:w-72 xl:w-80 h-auto aspect-[3/4] max-h-[420px] rounded-3xl overflow-hidden shadow-2xl border-2 border-white/10"
-          id="partner_3d_wrapper"
+        {/* Dynamic 3D Parallax Hover Container Deck */}
+        <div 
+          className="relative w-64 md:w-72 xl:w-80 h-auto aspect-[3/4] max-h-[420px] rounded-3xl cursor-crosshair transition-all duration-300"
+          style={{ perspective: 1000 }}
+          onMouseMove={handleMouseMove}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={handleMouseLeave}
+          id="perspective_deck_container"
         >
-          <img 
-            src={AVATAR_MAIN} 
-            alt="小团" 
-            className="w-full h-full object-cover select-none pointer-events-none" 
-            referrerPolicy="no-referrer"
-          />
+          <motion.div
+            animate={{
+              y: isHovered ? 0 : [0, -6, 0],
+            }}
+            transition={{
+              duration: 5,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            style={{
+              transform: `rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(${isHovered ? 1.03 : 1.0})`,
+              transformStyle: "preserve-3d",
+              transition: isInteracting ? "all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)" : "transform 0.12s ease-out, scale 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)",
+            }}
+            className="w-full h-full rounded-3xl overflow-hidden shadow-[0_20px_45px_rgba(0,0,0,0.5),0_0_25px_rgba(236,72,153,0.15)] border-2 border-white/10 bg-black/40 relative group"
+            id="partner_3d_wrapper"
+          >
+            {/* Primary Character Image */}
+            <img 
+              src={AVATAR_MAIN} 
+              alt="小团" 
+              className="w-full h-full object-cover select-none pointer-events-none transition-filter duration-300 group-hover:brightness-[1.05]" 
+              referrerPolicy="no-referrer"
+            />
 
-          {/* Sparkle effects on top of character */}
-          <div className="absolute inset-0 bg-gradient-to-t from-pink-500/10 via-transparent to-transparent pointer-events-none" />
-          
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-gray-900/60 backdrop-blur-md text-white/95 text-[11px] font-medium tracking-wide py-1 px-4 rounded-full border border-white/15 shadow-md">
-            ✨ 小团正在含情脉脉地望着你...
-          </div>
-        </motion.div>
+            {/* Sparkle atmospheric gradients */}
+            <div className="absolute inset-0 bg-gradient-to-t from-pink-500/20 via-transparent to-black/30 pointer-events-none mix-blend-overlay" />
+            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
+
+            {/* INTERACTIVE HOTSPOTS MAP (Layered on top of portrait coordinates) */}
+            
+            {/* Zone A: 摸摸头 (Head/Forehead) */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                triggerInteraction("pet");
+              }}
+              disabled={isInteracting}
+              className="absolute top-[10%] left-[28%] w-[44%] h-[22%] rounded-full border border-dashed border-pink-400/0 hover:border-pink-400/40 bg-pink-500/0 hover:bg-pink-500/10 transition-all duration-300 flex items-center justify-center group/btn cursor-pointer"
+              title="摸摸头"
+            >
+              <span className="opacity-0 group-hover/btn:opacity-150 transition-opacity bg-black/60 backdrop-blur-md text-[10px] text-pink-300 px-1.5 py-0.5 rounded border border-pink-500/20 scale-90 whitespace-nowrap">
+                ✨ 摸摸头
+              </span>
+            </button>
+
+            {/* Zone B: 捏捏小脸 (Cheeks) */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                triggerInteraction("pinch");
+              }}
+              disabled={isInteracting}
+              className="absolute top-[33%] left-[30%] w-[40%] h-[15%] rounded-2xl border border-dashed border-amber-400/0 hover:border-amber-400/40 bg-amber-500/0 hover:bg-amber-500/10 transition-all duration-300 flex items-center justify-center group/btn cursor-pointer"
+              title="捏捏小脸"
+            >
+              <span className="opacity-0 group-hover/btn:opacity-100 transition-opacity bg-black/60 backdrop-blur-md text-[10px] text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/20 scale-90 whitespace-nowrap">
+                🌸 捏捏脸
+              </span>
+            </button>
+
+            {/* Zone C: 投喂美味 (Mouth area) */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                triggerInteraction("feed");
+              }}
+              disabled={isInteracting}
+              className="absolute top-[49%] left-[40%] w-[20%] h-[10%] rounded-xl border border-dashed border-red-400/0 hover:border-red-400/40 bg-red-500/0 hover:bg-red-500/10 transition-all duration-300 flex items-center justify-center group/btn cursor-pointer"
+              title="喂口美食"
+            >
+              <span className="opacity-0 group-hover/btn:opacity-100 transition-opacity bg-black/60 backdrop-blur-md text-[10px] text-red-300 px-1.5 py-0.5 rounded border border-red-500/20 scale-90 whitespace-nowrap">
+                🍓 喂草莓
+              </span>
+            </button>
+
+            {/* Zone D: 牵手拥抱 (Hands & Bottom base) */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                triggerInteraction("hand");
+              }}
+              disabled={isInteracting}
+              className="absolute top-[62%] left-[20%] w-[60%] h-[28%] rounded-b-3xl border border-dashed border-purple-400/0 hover:border-purple-400/40 bg-purple-500/0 hover:bg-purple-500/10 transition-all duration-300 flex items-end justify-center pb-4 group/btn cursor-pointer"
+              title="牵小手"
+            >
+              <span className="opacity-0 group-hover/btn:opacity-100 transition-opacity bg-black/60 backdrop-blur-md text-[10px] text-purple-300 px-1.5 py-0.5 rounded border border-purple-500/20 scale-90 whitespace-nowrap">
+                🤝 牵牵手
+              </span>
+            </button>
+
+            {/* Floating indicator guide text */}
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-gray-950/80 backdrop-blur-md text-white/95 text-[10px] font-medium tracking-wide py-1 px-3.5 rounded-full border border-white/10 shadow-lg pointer-events-none">
+              <span className="text-pink-400 inline-block animate-pulse mr-1">3D Active</span> 
+              {isHovered ? "移动光标触发3D视角，点击相应部位可互动" : "静静望着你..."}
+            </div>
+
+            {/* Subtle light reflections */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+          </motion.div>
+        </div>
       </div>
 
       {/* Quick Interactive Actions Board */}
       <div className="w-full bg-gray-900/40 backdrop-blur-md rounded-2xl p-4 border border-white/5 shadow-xl" id="home_actions">
         <h3 className="text-white text-xs font-semibold tracking-wider uppercase mb-3 flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-pink-500 animate-ping" />
-          触碰身体 & 亲密互动
+          互动面板快捷键
         </h3>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
@@ -303,3 +461,4 @@ export default function HomePanel({
     </div>
   );
 }
+
